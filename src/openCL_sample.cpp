@@ -55,7 +55,7 @@ cv::Mat ClProcess(cv::Mat rgb, std::string path)
 		std::cout << "clGetPlatformIDs error" << std::endl;
 	}
 
-    //choose GPU
+    //choose GPU or CPU
     clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
 
     //step 2:create context
@@ -67,12 +67,19 @@ cv::Mat ClProcess(cv::Mat rgb, std::string path)
     //step 4:create a data buffer
     rgb_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, one_channel_uchar_size * 3, NULL, NULL);
     
+    //step 5: Write the data from a buffer
     clEnqueueWriteBuffer(cmdQueue, rgb_buffer, CL_FALSE, 0, one_channel_uchar_size * 3, rgb.data, 0, NULL, NULL);
    
+    //step 6: Create a program
     program = clCreateProgramWithSource(context, 1, (const char**)&buf_code, NULL, NULL);
+    
+    //step 7: Build the program
     clBuildProgram(program, 1, &device, NULL, NULL, NULL);
 
+    //step 8: Create a Kernel
     kernel_selectBackground = clCreateKernel(program, "selectBackground", NULL);
+    
+    //step 9: Set the arguments to the Kernel
     clSetKernelArg(kernel_selectBackground, 0, sizeof(cl_mem), &rgb_buffer);
 
     std::cout << "Path to cl file: " << path << std::endl;
